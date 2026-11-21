@@ -1,0 +1,38 @@
+import time
+import requests
+
+# The endpoint provided by Member 2's FastAPI backend
+BACKEND_URL = "http://localhost:8000/api/detect"
+
+# Define your test queue mimicking different forest sectors
+simulated_streams = [
+    {"node_id": "sector_a", "file_path": "test_audio_samples/birds.wav"},
+    {"node_id": "sector_b", "file_path": "test_audio_samples/chainsaw.wav"}, # This should trigger a red alert!
+    {"node_id": "sector_c", "file_path": "test_audio_samples/wind.wav"}
+]
+
+print("--- Virtual IoT Node Simulator Initialized ---")
+
+for stream in simulated_streams:
+    print(f"\n[Sensor Node] Recording audio from {stream['node_id']}...")
+    print(f"[Sensor Node] Streaming file: {stream['file_path']} to backend...")
+
+    try:
+        # Open the audio file in binary read mode and send via HTTP POST
+        with open(stream["file_path"], "rb") as audio_file:
+            files = {"file": (stream["file_path"], audio_file, "audio/wav")}
+            data = {"node_id": stream["node_id"]}
+            
+            response = requests.post(BACKEND_URL, files=files, data=data)
+            
+            if response.status_code == 200:
+                print(f"[Server Response Success]: {response.json()}")
+            else:
+                print(f"[Server Error]: {response.status_code} - {response.text}")
+                
+    except Exception as e:
+        print(f"[Connection Error]: Could not reach backend. Is FastAPI running? Details: {e}")
+
+    # Wait 6 seconds before simulating the next node ping
+    print("Waiting for next transmission cycle...")
+    time.sleep(6)
